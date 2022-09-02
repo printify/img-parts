@@ -1,5 +1,5 @@
 pub use self::chunk::PngChunk;
-pub use self::image::Png;
+pub use self::image::{Png, CHUNK_EXIF, CHUNK_ICCP, CHUNK_IEND, SIGNATURE};
 
 mod chunk;
 mod image;

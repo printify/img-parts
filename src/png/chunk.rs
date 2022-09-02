@@ -6,7 +6,7 @@ use crc32fast::Hasher;
 
 use crate::encoder::{EncodeAt, ImageEncoder};
 use crate::util::{read_checked, read_u8_len4_array, split_to_checked};
-use crate::{Error, Result};
+use crate::Result;
 
 /// The representation of a chunk making up a [`Png`][super::Png]
 #[derive(Clone, PartialEq, Eq)]
@@ -37,20 +37,19 @@ impl PngChunk {
     /// Create a `PngChunk` from `Bytes`
     ///
     /// # Errors
-    ///
-    /// This method fails if the chunk is corrupted or truncated.
-    pub fn from_bytes(b: &mut Bytes) -> Result<PngChunk> {
+    /// This method returns a chunk and a boolean flag, indicating that CRC is valid,
+    /// and fails if the chunk is truncated,
+    pub fn from_bytes(b: &mut Bytes) -> Result<(PngChunk, bool)> {
         let size = read_checked(b, |b| b.get_u32())?;
 
         let kind = read_u8_len4_array(b)?;
         let contents = split_to_checked(b, size as usize)?;
         let crc = read_u8_len4_array(b)?;
 
-        if crc != compute_crc(kind, &contents) {
-            return Err(Error::BadCRC);
-        }
+        let crc_valid = crc == compute_crc(kind, &contents);
+        let chunk = PngChunk::new_with_crc(kind, contents, crc);
 
-        Ok(PngChunk::new_with_crc(kind, contents, crc))
+        Ok((chunk, crc_valid))
     }
 
     /// Get the size of this `PngChunk` once it is encoded

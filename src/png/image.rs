@@ -10,7 +10,7 @@ use crate::util::read_u8_len8_array;
 use crate::{Error, ImageEXIF, ImageICC, Result};
 
 // the 8 byte signature
-pub(crate) const SIGNATURE: &[u8] = &[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+pub const SIGNATURE: &[u8] = &[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 pub const CHUNK_ICCP: [u8; 4] = [b'i', b'C', b'C', b'P'];
 pub const CHUNK_EXIF: [u8; 4] = [b'e', b'X', b'I', b'f'];
@@ -38,7 +38,10 @@ impl Png {
 
         let mut chunks = Vec::with_capacity(8);
         while !b.is_empty() {
-            let chunk = PngChunk::from_bytes(&mut b)?;
+            let (chunk, crc_valid) = PngChunk::from_bytes(&mut b)?;
+            if !crc_valid {
+                return Err(Error::BadCRC);
+            }
 
             // Often PNG images found in the internet contain garbage after IEND chunk.
             // Most PNG parsers simply ignore everything after IEND chunk
@@ -168,5 +171,11 @@ impl ImageEXIF for Png {
             let chunk = PngChunk::new(CHUNK_EXIF, exif);
             self.chunks.insert(self.chunks.len() - 1, chunk);
         }
+    }
+}
+
+impl From<Vec<PngChunk>> for Png {
+    fn from(chunks: Vec<PngChunk>) -> Self {
+        Self { chunks }
     }
 }
