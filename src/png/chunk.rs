@@ -6,7 +6,7 @@ use crc32fast::Hasher;
 use crate::{
     encoder::{EncodeAt, ImageEncoder},
     util::{read_checked, read_u8_array, split_to_checked},
-    Error, Result,
+    Result,
 };
 
 /// The representation of a chunk making up a [`Png`][super::Png]
