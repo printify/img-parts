@@ -31,7 +31,17 @@ impl Png {
     ///
     /// This method fails if the file signature doesn't match or if
     /// it is corrupted or truncated.
-    pub fn from_bytes(mut b: Bytes) -> Result<Png> {
+    pub fn from_bytes(b: Bytes) -> Result<Png> {
+        Self::from_bytes_with_filter(b, |_| true)
+    }
+
+    /// Create a `Png` from `Bytes`
+    ///
+    /// # Errors
+    ///
+    /// This method skips chunks that don't pass the filter, and fails if the file signature doesn't match or if
+    /// it is corrupted or truncated.
+    pub fn from_bytes_with_filter(mut b: Bytes, filter: impl Fn(&PngChunk) -> bool) -> Result<Png> {
         let signature: [u8; SIGNATURE.len()] = read_u8_array(&mut b)?;
         if signature != SIGNATURE {
             return Err(Error::WrongSignature);
@@ -40,6 +50,11 @@ impl Png {
         let mut chunks = Vec::with_capacity(8);
         while !b.is_empty() {
             let (chunk, crc_valid) = PngChunk::from_bytes(&mut b)?;
+            if !filter(&chunk) {
+                // Skip chunks that don't pass the filter
+                continue;
+            }
+
             if !crc_valid {
                 return Err(Error::BadCRC);
             }
