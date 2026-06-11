@@ -7,7 +7,7 @@ use super::PngChunk;
 use crate::{
     encoder::{EncodeAt, ImageEncoder},
     util::read_u8_array,
-    Error, ImageEXIF, ImageICC, Result,
+    Error, ImageEXIF, ImageICC, ImageICCWithLimits, Result,
 };
 
 // the 8 byte signature
@@ -170,6 +170,27 @@ impl ImageICC for Png {
 
             let chunk = PngChunk::new(CHUNK_ICCP, contents.freeze());
             self.chunks.insert(1, chunk);
+        }
+    }
+}
+
+impl ImageICCWithLimits for Png {
+    fn icc_profile_with_limit(&self, max_size: Option<usize>) -> Option<Bytes> {
+        let mut contents = self.chunk_by_type(CHUNK_ICCP)?.contents().clone();
+
+        // skip nul-terminated profile name
+        while contents.get_u8() != 0 {}
+
+        if let Some(max_size) = max_size {
+            if contents.remaining() > max_size {
+                return None;
+            }
+        }
+
+        // match on the compression method
+        match contents.get_u8() {
+            0 => decompress_to_vec_zlib(&contents).ok().map(Bytes::from),
+            _ => None,
         }
     }
 }
