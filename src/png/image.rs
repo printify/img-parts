@@ -143,16 +143,7 @@ impl EncodeAt for Png {
 // http://www.libpng.org/pub/png/spec/1.2/PNG-Chunks.html#C.iCCP
 impl ImageICC for Png {
     fn icc_profile(&self) -> Option<Bytes> {
-        let mut contents = self.chunk_by_type(CHUNK_ICCP)?.contents().clone();
-
-        // skip nul-terminated profile name
-        while contents.get_u8() != 0 {}
-
-        // match on the compression method
-        match contents.get_u8() {
-            0 => decompress_to_vec_zlib(&contents).ok().map(Bytes::from),
-            _ => None,
-        }
+        self.icc_profile_with_limit(None)
     }
 
     fn set_icc_profile(&mut self, profile: Option<Bytes>) {
