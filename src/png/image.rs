@@ -5,13 +5,13 @@ use miniz_oxide::{deflate::compress_to_vec_zlib, inflate::decompress_to_vec_zlib
 
 use super::PngChunk;
 use crate::{
+    Error, ImageEXIF, ImageICC, ImageICCWithLimits, Result,
     encoder::{EncodeAt, ImageEncoder},
     util::read_u8_array,
-    Error, ImageEXIF, ImageICC, Result,
 };
 
 // the 8 byte signature
-pub(crate) const SIGNATURE: &[u8] = &[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+pub const SIGNATURE: &[u8] = &[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 pub const CHUNK_ICCP: [u8; 4] = [b'i', b'C', b'C', b'P'];
 pub const CHUNK_EXIF: [u8; 4] = [b'e', b'X', b'I', b'f'];
@@ -31,7 +31,17 @@ impl Png {
     ///
     /// This method fails if the file signature doesn't match or if
     /// it is corrupted or truncated.
-    pub fn from_bytes(mut b: Bytes) -> Result<Png> {
+    pub fn from_bytes(b: Bytes) -> Result<Png> {
+        Self::from_bytes_with_filter(b, |_| true)
+    }
+
+    /// Create a `Png` from `Bytes`
+    ///
+    /// # Errors
+    ///
+    /// This method skips chunks that don't pass the filter, and fails if the file signature doesn't match or if
+    /// it is corrupted or truncated.
+    pub fn from_bytes_with_filter(mut b: Bytes, filter: impl Fn(&PngChunk) -> bool) -> Result<Png> {
         let signature: [u8; SIGNATURE.len()] = read_u8_array(&mut b)?;
         if signature != SIGNATURE {
             return Err(Error::WrongSignature);
@@ -39,7 +49,15 @@ impl Png {
 
         let mut chunks = Vec::with_capacity(8);
         while !b.is_empty() {
-            let chunk = PngChunk::from_bytes(&mut b)?;
+            let (chunk, crc_valid) = PngChunk::from_bytes(&mut b)?;
+            if !filter(&chunk) {
+                // Skip chunks that don't pass the filter
+                continue;
+            }
+
+            if !crc_valid {
+                return Err(Error::BadCRC);
+            }
 
             // Often PNG images found in the internet contain garbage after IEND chunk.
             // Most PNG parsers simply ignore everything after IEND chunk
@@ -156,6 +174,27 @@ impl ImageICC for Png {
     }
 }
 
+impl ImageICCWithLimits for Png {
+    fn icc_profile_with_limit(&self, max_size: Option<usize>) -> Option<Bytes> {
+        let mut contents = self.chunk_by_type(CHUNK_ICCP)?.contents().clone();
+
+        // skip nul-terminated profile name
+        while contents.get_u8() != 0 {}
+
+        if let Some(max_size) = max_size
+            && contents.remaining() > max_size
+        {
+            return None;
+        }
+
+        // match on the compression method
+        match contents.get_u8() {
+            0 => decompress_to_vec_zlib(&contents).ok().map(Bytes::from),
+            _ => None,
+        }
+    }
+}
+
 // https://ftp-osl.osuosl.org/pub/libpng/documents/pngext-1.5.0.html#C.eXIf
 impl ImageEXIF for Png {
     fn exif(&self) -> Option<Bytes> {
@@ -169,5 +208,11 @@ impl ImageEXIF for Png {
             let chunk = PngChunk::new(CHUNK_EXIF, exif);
             self.chunks.insert(self.chunks.len() - 1, chunk);
         }
+    }
+}
+
+impl From<Vec<PngChunk>> for Png {
+    fn from(chunks: Vec<PngChunk>) -> Self {
+        Self { chunks }
     }
 }
