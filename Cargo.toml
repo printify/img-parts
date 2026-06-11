@@ -7,21 +7,23 @@ repository = "https://github.com/paolobarbolini/img-parts"
 categories = ["multimedia::images", "multimedia::encoding", "parser-implementations"]
 keywords = ["jpeg", "png", "icc", "exif", "no_std"]
 readme = "README.md"
-edition = "2021"
-rust-version = "1.63"
+edition = "2024"
+rust-version = "1.94"
+resolver = "3"
 
 exclude = [
     "tests/",
 ]
 
 [dependencies]
-bytes = { version = "1.10", default-features = false }
-crc32fast = { version = "1.1.1", default-features = false }
-miniz_oxide = "0.8"
+bytes = { version = "1.11.1", default-features = false }
+crc32fast = { version = "1.5.0", default-features = false }
+miniz_oxide = { version = "0.9.1" }
 
 [features]
 default = ["std"]
 std = ["bytes/std", "crc32fast/std", "miniz_oxide/std"]
+simd = ["miniz_oxide/simd"]
 
 [package.metadata.docs.rs]
 targets = []

@@ -5,9 +5,9 @@ use miniz_oxide::{deflate::compress_to_vec_zlib, inflate::decompress_to_vec_zlib
 
 use super::PngChunk;
 use crate::{
+    Error, ImageEXIF, ImageICC, ImageICCWithLimits, Result,
     encoder::{EncodeAt, ImageEncoder},
     util::read_u8_array,
-    Error, ImageEXIF, ImageICC, ImageICCWithLimits, Result,
 };
 
 // the 8 byte signature
@@ -181,10 +181,10 @@ impl ImageICCWithLimits for Png {
         // skip nul-terminated profile name
         while contents.get_u8() != 0 {}
 
-        if let Some(max_size) = max_size {
-            if contents.remaining() > max_size {
-                return None;
-            }
+        if let Some(max_size) = max_size
+            && contents.remaining() > max_size
+        {
+            return None;
         }
 
         // match on the compression method

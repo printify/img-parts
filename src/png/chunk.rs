@@ -4,9 +4,9 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use crc32fast::Hasher;
 
 use crate::{
+    Result,
     encoder::{EncodeAt, ImageEncoder},
     util::{read_checked, read_u8_array, split_to_checked},
-    Result,
 };
 
 /// The representation of a chunk making up a [`Png`][super::Png]

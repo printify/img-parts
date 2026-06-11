@@ -1,7 +1,7 @@
 use std::fs::{self};
 
 use bytes::Bytes;
-use img_parts::{jpeg::Jpeg, ImageICC};
+use img_parts::{ImageICC, jpeg::Jpeg};
 
 #[test]
 fn extract_jpeg_noprofile() {
