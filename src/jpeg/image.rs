@@ -2,11 +2,11 @@ use alloc::vec::Vec;
 
 use bytes::{Buf, Bytes, BytesMut};
 
-use super::{markers, JpegSegment};
+use super::{JpegSegment, markers};
 use crate::{
+    Error, ImageEXIF, ImageICC, Result,
     encoder::{EncodeAt, ImageEncoder},
     util::read_checked,
-    Error, ImageEXIF, ImageICC, Result,
 };
 
 // segment size (2 byte) - segment meta (14 byte)

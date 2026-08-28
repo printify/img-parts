@@ -23,3 +23,9 @@ pub trait ImageEXIF {
     /// Adds new EXIF metadata if `exif` is `Some`.
     fn set_exif(&mut self, exif: Option<Bytes>);
 }
+
+pub trait ImageICCWithLimits: ImageICC {
+    /// Get the raw ICC Profile of this image, but only if it is smaller than `max_size` bytes.
+    /// Returns `None` if the ICC Profile is larger than `max_size` bytes, or if there is no ICC Profile.
+    fn icc_profile_with_limit(&self, max_size: Option<usize>) -> Option<Bytes>;
+}

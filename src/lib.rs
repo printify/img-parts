@@ -75,7 +75,7 @@ pub use encoder::ImageEncoder;
 #[cfg(feature = "std")]
 pub use encoder::ImageEncoderReader;
 pub use error::{Error, Result};
-pub use traits::{ImageEXIF, ImageICC};
+pub use traits::{ImageEXIF, ImageICC, ImageICCWithLimits};
 
 pub(crate) const EXIF_DATA_PREFIX: &[u8] = b"Exif\0\0";
 pub(crate) const EXIF_START_PREFIX_LE: &[u8] = b"II\x2A\0";

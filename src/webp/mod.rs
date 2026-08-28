@@ -4,12 +4,12 @@ use bytes::{Bytes, BytesMut};
 use flags::WebPFlags;
 
 use crate::{
+    EXIF_DATA_PREFIX, EXIF_START_PREFIX_BE, EXIF_START_PREFIX_LE, Error, ImageEXIF, ImageICC,
+    Result,
     encoder::ImageEncoder,
     riff::{RiffChunk, RiffContent},
     util::{u24_from_le_bytes, u24_to_le_bytes},
-    vp8::{size_from_vp8_header, VP8Kind},
-    Error, ImageEXIF, ImageICC, Result, EXIF_DATA_PREFIX, EXIF_START_PREFIX_BE,
-    EXIF_START_PREFIX_LE,
+    vp8::{VP8Kind, size_from_vp8_header},
 };
 
 mod flags;
@@ -124,33 +124,31 @@ impl WebP {
     ///
     /// Otherwise the dimension is read from the VP8 bitstream header.
     pub fn dimensions(&self) -> Option<(u32, u32)> {
-        if let Some(vp8x) = self.chunk_by_id(CHUNK_VP8X) {
-            if let Some(data) = vp8x.content().data() {
-                if let Some(range) = data.get(2..8) {
-                    let width = u24_from_le_bytes(range[0..3].try_into().unwrap()) + 1;
-                    let height = u24_from_le_bytes(range[3..6].try_into().unwrap()) + 1;
-                    return Some((width, height));
-                }
-            }
+        if let Some(vp8x) = self.chunk_by_id(CHUNK_VP8X)
+            && let Some(data) = vp8x.content().data()
+            && let Some(range) = data.get(2..8)
+        {
+            let width = u24_from_le_bytes(range[0..3].try_into().unwrap()) + 1;
+            let height = u24_from_le_bytes(range[3..6].try_into().unwrap()) + 1;
+            return Some((width, height));
         }
 
-        if let Some(vp8) = self.chunk_by_id(CHUNK_VP8) {
-            if let Some(data) = vp8.content().data() {
-                let (width, height) = size_from_vp8_header(data);
-                return Some((width as u32, height as u32));
-            }
+        if let Some(vp8) = self.chunk_by_id(CHUNK_VP8)
+            && let Some(data) = vp8.content().data()
+        {
+            let (width, height) = size_from_vp8_header(data);
+            return Some((width as u32, height as u32));
         }
 
-        if let Some(vp8l) = self.chunk_by_id(CHUNK_VP8L) {
-            if let Some(data) = vp8l.content().data() {
-                if let Some(range) = data.get(1..5) {
-                    let size = u32::from_le_bytes(range.try_into().unwrap());
-                    let width = (size & 0x3FFF) + 1;
-                    let height = ((size >> 14) & 0x3FFF) + 1;
+        if let Some(vp8l) = self.chunk_by_id(CHUNK_VP8L)
+            && let Some(data) = vp8l.content().data()
+            && let Some(range) = data.get(1..5)
+        {
+            let size = u32::from_le_bytes(range.try_into().unwrap());
+            let width = (size & 0x3FFF) + 1;
+            let height = ((size >> 14) & 0x3FFF) + 1;
 
-                    return Some((width, height));
-                }
-            }
+            return Some((width, height));
         }
 
         None
@@ -167,9 +165,7 @@ impl WebP {
     /// Get a mutable reference to the chunks of this `WebP`.
     pub fn chunks_mut(&mut self) -> &mut Vec<RiffChunk> {
         match self.riff.content_mut() {
-            RiffContent::List {
-                ref mut subchunks, ..
-            } => subchunks,
+            RiffContent::List { subchunks, .. } => subchunks,
             _ => unreachable!(),
         }
     }

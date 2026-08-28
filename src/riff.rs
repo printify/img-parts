@@ -4,9 +4,9 @@ use core::fmt;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 use crate::{
+    Error, Result,
     encoder::{EncodeAt, ImageEncoder},
     util::{read_checked, read_u8_array, split_to_checked},
-    Error, Result,
 };
 
 // the 4 bytes signature

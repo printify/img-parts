@@ -1,7 +1,7 @@
 use std::fs::{self};
 
 use bytes::Bytes;
-use img_parts::{webp::WebP, ImageICC};
+use img_parts::{ImageICC, webp::WebP};
 
 #[test]
 fn extract_webp_noprofile() {

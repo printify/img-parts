@@ -1,11 +1,11 @@
 use bytes::Bytes;
 
 use crate::{
-    encoder::{EncodeAt, ImageEncoder},
-    jpeg::{is_jpeg, Jpeg},
-    png::{is_png, Png},
-    webp::{is_webp, WebP},
     ImageEXIF, ImageICC, Result,
+    encoder::{EncodeAt, ImageEncoder},
+    jpeg::{Jpeg, is_jpeg},
+    png::{Png, is_png},
+    webp::{WebP, is_webp},
 };
 
 /// An enum wrapping the common functions shared by the different image formats

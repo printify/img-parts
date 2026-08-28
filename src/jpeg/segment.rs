@@ -4,9 +4,9 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 use super::markers::{self, has_entropy, has_length};
 use crate::{
+    EXIF_DATA_PREFIX, Error, Result,
     encoder::{EncodeAt, ImageEncoder},
     util::{read_checked, split_to_checked},
-    Error, Result, EXIF_DATA_PREFIX,
 };
 
 const ICC_DATA_PREFIX: &[u8] = b"ICC_PROFILE\0";

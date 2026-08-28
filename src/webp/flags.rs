@@ -1,4 +1,4 @@
-use super::{WebP, CHUNK_EXIF, CHUNK_ICCP};
+use super::{CHUNK_EXIF, CHUNK_ICCP, WebP};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub struct WebPFlags(pub(super) [u8; 4]);
